@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="flinkquickstartjava" />
+        <module name="flink-quickstart-java" />
       </profile>
     </annotationProcessing>
   </component>
