@@ -10,5 +10,6 @@
         <module name="flink-quickstart-java" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel target="8" />
   </component>
 </project>

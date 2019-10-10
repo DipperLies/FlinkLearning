@@ -7,7 +7,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
 
@@ -27,7 +27,7 @@ public class KafkaTest {
         properties.setProperty("zookeeper.connect","10.108.240.137:2181,10.108.240.147:2181,10.108.240.157:2181");
         properties.setProperty("group.id","test008");
 
-        FlinkKafkaConsumer08<String> myConsumer =new FlinkKafkaConsumer08<String>("P2OEEMDB.EQP_STATE_MPA",new SimpleStringSchema(),
+        FlinkKafkaConsumer010<String> myConsumer =new FlinkKafkaConsumer010<String>("P2OEEMDB.EQP_STATE_MPA",new SimpleStringSchema(),
                 properties);
         DataStream<String> stream = env.addSource(myConsumer);
         DataStream<Tuple2<String,Integer>> counts=stream.flatMap(new LineSplitter()).keyBy(0).sum(1);

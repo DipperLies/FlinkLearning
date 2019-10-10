@@ -10,6 +10,14 @@
 
     <repositories>
 
+
+
+        <repository>
+            <id>maven-hadoop</id>
+            <name>Hadoop Releases</name>
+            <url>http://repo1.maven.org/maven2/</url>
+        </repository>
+
         <repository>
             <id>csot-center-repo</id>
             <name>csot-center-repo</name>
@@ -20,12 +28,6 @@
             <id>cloudera-repos</id>
             <name>Cloudera Repos</name>
             <url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
-        </repository>
-
-        <repository>
-            <id>maven-hadoop</id>
-            <name>Hadoop Releases</name>
-            <url>http://repo2.maven.org/maven2/</url>
         </repository>
 
         <repository>
@@ -42,7 +44,7 @@
     </repositories>
 
     <properties>
-        <flink.version>1.9.0</flink.version>
+        <flink.version>1.8.0</flink.version>
         <hadoop.version>2.6.0-cdh5.16.1</hadoop.version>
     </properties>
 
@@ -73,7 +75,19 @@
 
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka-0.8_2.11</artifactId>
+            <artifactId>flink-connector-kafka-0.10_2.11</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.18</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-parquet</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
