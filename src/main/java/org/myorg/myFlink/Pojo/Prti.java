@@ -9,7 +9,6 @@ import lombok.Data;
 @Data
 public class Prti {
     private String passingTime;
-
     private String plateNo;
 
     public Prti() {

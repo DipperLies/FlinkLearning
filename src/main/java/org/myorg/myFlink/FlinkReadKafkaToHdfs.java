@@ -20,10 +20,8 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.util.Collector;
-import org.myorg.myFlink.Pojo.Prti;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import org.myorg.myFlink.Pojo.Prti;
 import java.time.ZoneId;
 import java.util.Properties;
 
@@ -90,12 +88,22 @@ public class FlinkReadKafkaToHdfs {
         environment.execute("PrtiData");
     }
 
-    private static Prti transformData(String data) {
+    private static Prti transformData(String data) throws Exception {
         if (data != null && !data.isEmpty()) {
             JSONObject value = JSON.parseObject(data);
             Prti prti = new Prti();
             prti.setPlateNo(value.getString("RSD_02"));
             prti.setPassingTime(value.getString("op_ts"));
+            if (!value.containsKey("RAWID") || !(value.getString("RAWID") instanceof String)) {
+                prti.setPlateNo("Null");
+            } else {
+                prti.setPlateNo(value.getString("RAWID"));
+            }
+            if (!value.containsKey("pos")|| !(value.getString("pos") instanceof String)) {
+                prti.setPassingTime("0L");
+            } else {
+                prti.setPassingTime(value.getString("pos"));
+            }
             System.out.println(prti.toString());
             return prti;
         } else {

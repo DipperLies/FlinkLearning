@@ -13,4 +13,7 @@ public class TopicSource {
     private String old_state;
     private String new_state;
     private String eqp_id;
+
+    public TopicSource(){
+    }
 }
