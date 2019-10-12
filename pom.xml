@@ -9,16 +9,19 @@
     <version>1.0-SNAPSHOT</version>
 
     <repositories>
+
+        <repository>
+            <id>maven-hadoop</id>
+            <name>Hadoop Releases</name>
+            <url>http://repo1.maven.org/maven2</url>
+        </repository>
+
         <repository>
             <id>Ali</id>
             <name>ali Releases</name>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </repository>
-        <repository>
-            <id>maven-hadoop</id>
-            <name>Hadoop Releases</name>
-            <url>http://repo1.maven.org/maven2/</url>
-        </repository>
+
 
         <repository>
             <id>csot-center-repo</id>
@@ -42,10 +45,11 @@
     </repositories>
 
     <properties>
-        <flink.version>1.8.0</flink.version>
+        <flink.version>1.9.0</flink.version>
         <hadoop.version>2.6.0-cdh5.16.1</hadoop.version>
         <slf4j.version>1.7.7</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
+        <avro.version>1.8.2</avro.version>
     </properties>
 
     <dependencies>
@@ -137,7 +141,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>${hadoop.version}</version>
+            <version>2.7.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -153,17 +157,17 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
-            <version>${hadoop.version}</version>
+            <version>2.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-parquet</artifactId>
-            <version>${flink.version}</version>
+            <version>1.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-hadoop-compatibility_2.11</artifactId>
-            <version>${flink.version}</version>
+            <version>1.7.0</version>
         </dependency>
 
         <dependency>
@@ -181,27 +185,40 @@
     </dependencies>
     <build>
         <plugins>
+            <!-- Generate Test class from avro schema -->
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>${avro.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+                        <configuration>
+                            <testSourceDirectory>${project.basedir}/src/test/resources/avro</testSourceDirectory>
+                            <testOutputDirectory>${project.basedir}/src/test/java/</testOutputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- skip dependency convergence due to Hadoop dependency -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.3</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.smartloli.kafka.connector.flink.hdfs.FlinkParquetUtils</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>dependency-convergence</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

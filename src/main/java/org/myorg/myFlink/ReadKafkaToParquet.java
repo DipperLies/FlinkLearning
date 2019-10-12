@@ -1,48 +1,36 @@
-package org.myorg.myFlink.utils;
+package org.myorg.myFlink;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.sun.istack.Nullable;
-import org.apache.avro.Schema;
-import org.apache.flink.api.common.serialization.SimpleStringEncoder;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
 import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.DateTimeBucketAssigner;
-import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.apache.flink.streaming.connectors.fs.SequenceFileWriter;
-import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
-import org.apache.flink.streaming.connectors.fs.bucketing.DateTimeBucketer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
-import org.apache.flink.streaming.runtime.tasks.ExceptionInChainedOperatorException;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
-import org.apache.hadoop.io.IntWritable;
 import org.myorg.myFlink.Pojo.TopicSource;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-
 
 /**
  * @author Michael
- * @date 2019-10-10 9:35
+ * @date 2019-10-12 14:43
  */
-public class FlinkParquetUtils {
+public class ReadKafkaToParquet {
     private final static StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     private final static Properties props = new Properties();
 
@@ -78,7 +66,7 @@ public class FlinkParquetUtils {
             String zone = props.getProperty("hdfs.path.date.zone");
             Long windowTime = Long.valueOf(props.getProperty("window.time.second"));
             FlinkKafkaConsumer010<String> flinkKafkaConsumer010 = new FlinkKafkaConsumer010<>(topic, new SimpleStringSchema(), props);
-            KeyedStream<TopicSource, String> KeyedStream = env.addSource(flinkKafkaConsumer010).map(FlinkParquetUtils::transformData).assignTimestampsAndWatermarks(new CustomWatermarks<TopicSource>()).keyBy(TopicSource::getId);
+            KeyedStream<TopicSource, String> KeyedStream = env.addSource(flinkKafkaConsumer010).map(ReadKafkaToParquet::transformData).assignTimestampsAndWatermarks(new ReadKafkaToParquet.CustomWatermarks<TopicSource>()).keyBy(TopicSource::getId);
 
             DataStream<TopicSource> output = KeyedStream.window(TumblingEventTimeWindows.of(Time.seconds(windowTime))).apply(new WindowFunction<TopicSource, TopicSource, String, TimeWindow>() {
 

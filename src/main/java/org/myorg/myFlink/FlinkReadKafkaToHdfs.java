@@ -127,6 +127,7 @@ public class FlinkReadKafkaToHdfs {
             cuurentTime = Math.max(passingTime, cuurentTime);
             return passingTime;
         }
+
     }
 
     public static void main(String[] args) throws Exception {
