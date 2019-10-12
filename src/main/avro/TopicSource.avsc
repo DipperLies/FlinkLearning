@@ -1,0 +1,13 @@
+[
+{"namespace": "org.myorg.myFlink.Pojo",
+ "type": "record",
+ "name": "TopicSource",
+ "fields": [
+     {"name": "time", "type": "long"},
+     {"name": "id", "type": "string"},
+     {"name": "old_state", "type": "string"},
+     {"name": "new_state", "type": "string"},
+     {"name": "eqp_id", "type": "string"}
+  ]
+}
+]

@@ -2,30 +2,23 @@ package org.myorg.myFlink.utils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.sun.istack.Nullable;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.avro.Schema;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
 import org.apache.flink.streaming.api.functions.sink.filesystem.bucketassigners.DateTimeBucketAssigner;
-import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy;
 import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.apache.flink.streaming.connectors.fs.SequenceFileWriter;
-import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
-import org.apache.flink.streaming.connectors.fs.bucketing.DateTimeBucketer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
-import org.apache.hadoop.io.IntWritable;
 import org.myorg.myFlink.Pojo.TopicSource;
 
 import java.text.DateFormat;
@@ -64,13 +57,15 @@ public class FlinkParquetUtils {
     /** Consumer topic data && parse to hdfs. */
     public static void getTopicToHdfsByParquet(StreamExecutionEnvironment env, Properties props) {
         try {
+            final Schema schema = TopicSource.getClassSchema();
+
             String topic = props.getProperty("kafka.topic");
             String path = props.getProperty("hdfs.path");
             String pathFormat = props.getProperty("hdfs.path.date.format");
             String zone = props.getProperty("hdfs.path.date.zone");
             Long windowTime = Long.valueOf(props.getProperty("window.time.second"));
             FlinkKafkaConsumer010<String> flinkKafkaConsumer010 = new FlinkKafkaConsumer010<>(topic, new SimpleStringSchema(), props);
-            KeyedStream<TopicSource, String> KeyedStream = env.addSource(flinkKafkaConsumer010).map(FlinkParquetUtils::transformData).assignTimestampsAndWatermarks(new CustomWatermarks<TopicSource>()).keyBy(TopicSource::getId);
+            KeyedStream<TopicSource, String> KeyedStream = env.addSource(flinkKafkaConsumer010).map(FlinkParquetUtils::transformData).assignTimestampsAndWatermarks(new CustomWatermarks<TopicSource>()).keyBy(TopicSource::getIdString);
 
             DataStream<TopicSource> output = KeyedStream.window(TumblingEventTimeWindows.of(Time.seconds(windowTime))).apply(new WindowFunction<TopicSource, TopicSource, String, TimeWindow>() {
 
@@ -87,16 +82,18 @@ public class FlinkParquetUtils {
             // Send hdfs by parquet
             System.out.println("*********** hdfs ***********************");
             DateTimeBucketAssigner<TopicSource> bucketAssigner = new DateTimeBucketAssigner<>(pathFormat, ZoneId.of(zone));
-            StreamingFileSink<TopicSource> streamingFileSink = StreamingFileSink.forBulkFormat(new Path(path)
-                    , ParquetAvroWriters.forReflectRecord(TopicSource.class))
-                    .withBucketAssigner(bucketAssigner)
-                    .build();
+//            StreamingFileSink<TopicSource> streamingFileSink1 = StreamingFileSink.forBulkFormat(new Path(path)
+//                    , ParquetAvroWriters.forReflectRecord(TopicSource.class))
+//                    .withBucketAssigner(bucketAssigner)
+//                    .build();
 //            BucketingSink<TopicSource> sink = new BucketingSink<TopicSource>("hdfs://10.108.7.181:8020/tmp/path");
 //            sink.setBucketer(new DateTimeBucketer<>("yyyy-MM-dd--HHmm", ZoneId.of("Asia/Shanghai")));
 //            sink.setBatchSize(1024 * 1024 * 400); // this is 400 MB,
 //            sink.setBatchRolloverInterval(1 * 60 * 1000); // this is 20 mins
-
-            output.addSink(streamingFileSink).name("Sink To HDFS");
+            KeyedStream.addSink(StreamingFileSink.forBulkFormat(
+                    new Path(path),
+                    ParquetAvroWriters.forSpecificRecord(TopicSource.class))
+                    .build()).name("Sink To HDFS");
             env.execute("TopicData");
         } catch (Exception ex) {
             System.out.println("!!####!!Exception");
@@ -126,19 +123,19 @@ public class FlinkParquetUtils {
                     topic.setTime(value.getLong("pos"));
                 }
                 if ((!value.containsKey("RSD_02")) || !(value.getString("RSD_02") instanceof String)) {
-                    topic.setEqp_id("Null");
+                    topic.setEqpId("Null");
                 } else {
-                    topic.setEqp_id(value.getString("RSD_02"));
+                    topic.setEqpId(value.getString("RSD_02"));
                 }
                 if ((!value.containsKey("OLD_STATE")) || !(value.getString("OLD_STATE") instanceof String)) {
-                    topic.setOld_state("Null");
+                    topic.setOldState("Null");
                 } else {
-                    topic.setOld_state(value.getString("OLD_STATE"));
+                    topic.setOldState(value.getString("OLD_STATE"));
                 }
                 if ((!value.containsKey("NEW_STATE")) || !(value.getString("NEW_STATE") instanceof String)) {
-                    topic.setNew_state("Null");
+                    topic.setNewState("Null");
                 } else {
-                    topic.setNew_state(value.getString("NEW_STATE"));
+                    topic.setNewState(value.getString("NEW_STATE"));
                 }
                 System.out.println(topic.toString());
             }catch (Exception e){
@@ -160,7 +157,6 @@ public class FlinkParquetUtils {
         private Long cuurentTime = 0L;
         final Long maxOutOfOrderness = 10000L;// 最大允许的乱序时间是10s
 
-        @Nullable
         @Override
         public Watermark checkAndGetNextWatermark(TopicSource topic, long l) {
             return new Watermark(cuurentTime-maxOutOfOrderness);

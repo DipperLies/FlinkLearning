@@ -2,7 +2,6 @@ package org.myorg.myFlink;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.sun.istack.Nullable;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters;
@@ -115,7 +114,6 @@ public class FlinkReadKafkaToHdfs {
 
         private Long cuurentTime = 0L;
 
-        @Nullable
         @Override
         public Watermark checkAndGetNextWatermark(Prti prti, long l) {
             return new Watermark(cuurentTime);
