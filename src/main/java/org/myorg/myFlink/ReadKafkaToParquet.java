@@ -2,7 +2,6 @@ package org.myorg.myFlink;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.sun.istack.Nullable;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.formats.parquet.avro.ParquetAvroWriters;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -16,6 +15,8 @@ import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
+import org.apache.flink.streaming.connectors.fs.bucketing.BucketingSink;
+import org.apache.flink.streaming.connectors.fs.bucketing.DateTimeBucketer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 import org.apache.flink.util.Collector;
@@ -82,18 +83,18 @@ public class ReadKafkaToParquet {
             output.print();
             // Send hdfs by parquet
             System.out.println("*********** hdfs ***********************");
-            DateTimeBucketAssigner<TopicSource> bucketAssigner = new DateTimeBucketAssigner<>(pathFormat, ZoneId.of(zone));
-            final StreamingFileSink<TopicSource> streamingFileSink = StreamingFileSink.forBulkFormat(new Path(path)
-                    , ParquetAvroWriters.forReflectRecord(TopicSource.class))
-                    .withBucketAssigner(bucketAssigner)
-                    .build();
-//            BucketingSink<TopicSource> sink = new BucketingSink<TopicSource>("hdfs://10.108.7.181:8020/tmp/path");
-//            sink.setBucketer(new DateTimeBucketer<>("yyyy-MM-dd--HHmm", ZoneId.of("Asia/Shanghai")));
-//            sink.setBatchSize(1024 * 1024 * 400); // this is 400 MB,
-//            sink.setBatchRolloverInterval(1 * 60 * 1000); // this is 20 mins
+//            DateTimeBucketAssigner<TopicSource> bucketAssigner = new DateTimeBucketAssigner<>(pathFormat, ZoneId.of(zone));
+//            final StreamingFileSink<TopicSource> streamingFileSink = StreamingFileSink.forBulkFormat(new Path(path)
+//                    , ParquetAvroWriters.forReflectRecord(TopicSource.class))
+//                    .withBucketAssigner(bucketAssigner)
+//                    .build();
+            BucketingSink<TopicSource> sink = new BucketingSink<TopicSource>("hdfs://10.108.7.181:8020/tmp/path");
+            sink.setBucketer(new DateTimeBucketer<>("yyyy-MM-dd--HHmm", ZoneId.of("Asia/Shanghai")));
+            sink.setBatchSize(1024 * 1024 * 400); // this is 400 MB,
+            sink.setBatchRolloverInterval(1 * 60 * 1000); // this is 20 mins
 
 
-            output.addSink(streamingFileSink).name("Sink To HDFS");
+            output.addSink(sink).name("Sink To HDFS");
             env.execute("TopicData");
         } catch (Exception ex) {
             System.out.println("!!####!!Exception");
@@ -154,7 +155,6 @@ public class ReadKafkaToParquet {
         private Long cuurentTime = 0L;
         final Long maxOutOfOrderness = 10000L;// 最大允许的乱序时间是10s
 
-        @Nullable
         @Override
         public Watermark checkAndGetNextWatermark(TopicSource topic, long l) {
             return new Watermark(cuurentTime);
